@@ -1,32 +1,220 @@
+# 최종 웹사이트 코드 ZIP으로 압축
+import os
+import zipfile
+
+site_dir = "/mnt/data/final_garbage_site"
+os.makedirs(site_dir, exist_ok=True)
+
+# index.html
+with open(os.path.join(site_dir, "index.html"), "w", encoding="utf-8") as f:
+    f.write("""
 <!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>전국 쓰레기 배출 정보 검색</title>
-  <link rel="stylesheet" href="styles.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>수도권 분리배출 정보</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&libraries=places"></script>
 </head>
 <body>
-  <div class="wrapper">
-    <h1>🗑 전국 쓰레기 배출 정보 검색</h1>
-
-    <div class="input-group">
-      <select id="regionSelect" onchange="updateDistricts()">
-        <option value="">시/도 선택</option>
-      </select>
-
-      <select id="districtSelect">
-        <option value="">시/군/구 선택</option>
-      </select>
-    </div>
-
-    <input type="text" id="autocomplete" placeholder="검색어 입력 (예: 서울 강남구)" oninput="suggest()" />
+  <div class="container">
+    <h1>🗑️ 수도권 분리배출 정보 검색</h1>
+    <input id="search" type="text" placeholder="예: 서울특별시 강남구" />
     <ul id="suggestions"></ul>
-
+    
     <button onclick="search()">검색</button>
-    <div id="result"></div>
+    <div id="result" class="card hidden"></div>
+
+    <div id="map" class="map"></div>
   </div>
 
   <script src="script.js"></script>
 </body>
 </html>
+""")
+
+# style.css
+with open(os.path.join(site_dir, "style.css"), "w", encoding="utf-8") as f:
+    f.write("""
+body {
+  font-family: 'Noto Sans KR', sans-serif;
+  margin: 0;
+  background: #f4fbf8;
+  color: #333;
+}
+.container {
+  max-width: 720px;
+  margin: 40px auto;
+  padding: 20px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+}
+h1 {
+  text-align: center;
+  margin-bottom: 20px;
+  font-weight: 700;
+  font-size: 1.5rem;
+}
+input, select, button {
+  padding: 12px;
+  font-size: 1rem;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  margin-bottom: 10px;
+}
+input {
+  width: 100%;
+  box-sizing: border-box;
+}
+#suggestions {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  background: white;
+  border: 1px solid #ddd;
+  max-height: 200px;
+  overflow-y: auto;
+}
+#suggestions li {
+  padding: 10px;
+  cursor: pointer;
+  border-bottom: 1px solid #eee;
+}
+#suggestions li:hover {
+  background: #f1f9f6;
+}
+button {
+  width: 100%;
+  background-color: #a5d8ff;
+  color: #333;
+  font-weight: bold;
+  transition: background 0.3s;
+}
+button:hover {
+  background-color: #74c0fc;
+}
+.card {
+  margin-top: 20px;
+  padding: 20px;
+  background: #e6fcf5;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+.hidden {
+  display: none;
+}
+.map {
+  width: 100%;
+  height: 300px;
+  margin-top: 20px;
+  border-radius: 10px;
+}
+@media (max-width: 600px) {
+  .container {
+    margin: 10px;
+    padding: 16px;
+  }
+}
+""")
+
+# script.js
+with open(os.path.join(site_dir, "script.js"), "w", encoding="utf-8") as f:
+    f.write("""
+let data = [];
+let map;
+
+window.onload = async () => {
+  const response = await fetch("data.json");
+  data = await response.json();
+
+  const input = document.getElementById("search");
+  input.addEventListener("input", suggest);
+  document.addEventListener("click", () => {
+    document.getElementById("suggestions").innerHTML = "";
+  });
+
+  initMap();
+};
+
+function suggest(e) {
+  const input = e.target.value.trim().replace(/\\s/g, "");
+  const suggestions = document.getElementById("suggestions");
+  suggestions.innerHTML = "";
+
+  const matches = data.filter(d =>
+    (d.시도명 + d.시군구명).replace(/\\s/g, "").includes(input)
+  );
+
+  const unique = [...new Set(matches.map(d => `${d.시도명} ${d.시군구명}`))];
+  unique.slice(0, 10).forEach(loc => {
+    const li = document.createElement("li");
+    li.textContent = loc;
+    li.onclick = () => {
+      document.getElementById("search").value = loc;
+      suggestions.innerHTML = "";
+    };
+    suggestions.appendChild(li);
+  });
+}
+
+function search() {
+  const val = document.getElementById("search").value.trim().replace(/\\s/g, "");
+  const result = document.getElementById("result");
+  const matched = data.filter(d =>
+    (d.시도명 + d.시군구명).replace(/\\s/g, "") === val
+  );
+
+  result.innerHTML = "";
+
+  if (matched.length === 0) {
+    result.classList.remove("hidden");
+    result.innerHTML = "해당 지역 정보를 찾을 수 없습니다.";
+    return;
+  }
+
+  matched.forEach(i => {
+    result.classList.remove("hidden");
+    result.innerHTML += `
+      <strong>${i.시도명} ${i.시군구명} - ${i.관리구역명}</strong><br>
+      🧺 생활: ${i.생활쓰레기배출방법} (${i.생활쓰레기배출요일})<br>
+      🍎 음식물: ${i.음식물쓰레기배출방법} (${i.음식물쓰레기배출요일})<br>
+      ♻️ 재활용: ${i.재활용품배출방법} (${i.재활용품배출요일})<br>
+      🚫 미수거일: ${i.미수거일}<br>
+      ☎️ 문의: ${i.관리부서전화번호}<br><br>
+    `;
+
+    moveMap(i.시도명 + " " + i.시군구명);
+  });
+}
+
+function initMap() {
+  map = new google.maps.Map(document.getElementById("map"), {
+    center: { lat: 37.5665, lng: 126.9780 },
+    zoom: 11
+  });
+}
+
+function moveMap(location) {
+  const geocoder = new google.maps.Geocoder();
+  geocoder.geocode({ address: location }, (results, status) => {
+    if (status === "OK") {
+      map.setCenter(results[0].geometry.location);
+      new google.maps.Marker({
+        map: map,
+        position: results[0].geometry.location
+      });
+    }
+  });
+}
+""")
+
+# ZIP으로 압축
+zip_path = "/mnt/data/final_garbage_site.zip"
+with zipfile.ZipFile(zip_path, "w") as zipf:
+    for file in ["index.html", "style.css", "script.js"]:
+        zipf.write(os.path.join(site_dir, file), arcname=file)
+
+zip_path
