@@ -1,0 +1,5 @@
+
+body{font-family:sans-serif;background:#f0f7f4;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;}
+.container{background:#fff;padding:20px;border-radius:10px;box-shadow:0 4px 8px rgba(0,0,0,0.1);}
+select,button{padding:10px;margin:5px;border-radius:5px;border:1px solid #ccc;}
+button{cursor:pointer;background:#a9def9;}button:hover{background:#89c2d9;}
