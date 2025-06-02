@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>전국 쓰레기 배출 정보</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="wrapper">
+    <h1>🗑 전국 쓰레기 배출 정보 검색</h1>
+    <input type="text" id="autocomplete" placeholder="지역명 (예: 서울 강남구)" oninput="suggest()" />
+    <ul id="suggestions"></ul>
+    <button onclick="search()">검색</button>
+    <div id="result"></div>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>
