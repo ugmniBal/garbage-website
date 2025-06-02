@@ -4,20 +4,23 @@ body {
   margin: 0;
 }
 .wrapper {
-  padding: 10px 20px;
-  max-width: 100%;
+  padding: 20px;
 }
 h1 {
-  font-size: 22px;
   text-align: center;
-  margin: 10px 0;
+  font-size: 22px;
 }
-input {
-  width: 100%;
-  padding: 12px;
-  font-size: 16px;
+.input-group {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+select, input {
+  flex: 1;
+  padding: 10px;
+  font-size: 14px;
+  border-radius: 6px;
   border: 1px solid #ccc;
-  border-radius: 8px;
 }
 ul#suggestions {
   list-style: none;
@@ -42,7 +45,4 @@ button {
 #result {
   margin-top: 20px;
   font-size: 14px;
-}
-@media (max-width: 600px) {
-  h1 { font-size: 18px; }
 }
